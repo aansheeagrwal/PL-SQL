@@ -1,0 +1,402 @@
+SET SERVEROUTPUT ON;
+
+create table customer_demo
+(
+cust_id number(8),
+cust_name varchar2(40),
+dob date,
+mobile_no number(10),
+city varchar2(40)
+);
+
+INSERT INTO customer_demo (cust_id, cust_name, dob, mobile_no, city)
+VALUES (1000, 'Arun', TO_DATE('12/09/1985','MM/DD/YYYY'), 9090909090, 'Chennai');
+
+INSERT INTO customer_demo (cust_id, cust_name, dob, mobile_no, city)
+VALUES (1001, 'John', TO_DATE('01/27/1982','MM/DD/YYYY'), 9090909093, 'Pune');
+
+INSERT INTO customer_demo (cust_id, cust_name, dob, mobile_no, city)
+VALUES (1002, 'Babu', TO_DATE('06/23/1995','MM/DD/YYYY'), 9090909089, 'Hyd');
+
+COMMIT;  -- save changes
+
+
+select * from customer_demo;
+
+DECLARE
+    v_phone NUMBER(15);
+BEGIN
+    SELECT mobile_no
+    INTO v_phone
+    FROM customer_demo
+    WHERE cust_id = 1002;
+
+    dbms_output.put_line('The phone number is ' || v_phone);
+END;
+/
+
+DELETE FROM customer_demo WHERE cust_id = 1002 AND rowid NOT IN
+    (SELECT MIN(rowid) FROM customer_demo WHERE cust_id = 1002);
+COMMIT;
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    v_mobile_no NUMBER(15);
+BEGIN
+    -- Fetch only one row
+    SELECT mobile_no
+    INTO v_mobile_no
+    FROM customer_demo
+    WHERE cust_id = 1002;
+
+    dbms_output.put_line('The mobile number is ' || v_mobile_no);
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        dbms_output.put_line('No customer found with cust_id=1002');
+    WHEN TOO_MANY_ROWS THEN
+        dbms_output.put_line('More than one customer found with cust_id=1002');
+END;
+/
+SELECT * FROM customer_demo;
+
+DELETE FROM customer_demo
+WHERE ROWID NOT IN (
+    SELECT MIN(ROWID)
+    FROM customer_demo
+    GROUP BY cust_id
+);
+COMMIT;
+SELECT cust_id, COUNT(*)
+FROM customer_demo
+GROUP BY cust_id
+HAVING COUNT(*) > 1;
+
+SELECT * FROM customer_demo;
+
+rename customer_demo to customer_bkp;
+
+create table customer_demo
+(
+cust_id number(8),
+cust_name varchar2(40),
+dob date,
+mobile_no varchar2(20),
+city varchar2(40)
+);
+
+insert into customer_demo (select cust_id,cust_name,dob,'+91'||mobile_no,city from customer_bkp);
+commit;
+truncate table customer_demo;
+
+select * from customer_demo;
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+  vcust customer_demo%ROWTYPE;
+BEGIN
+  SELECT * INTO vcust
+  FROM customer_demo
+  WHERE cust_id = 1000;  -- unique ID
+
+  dbms_output.put_line('Customer Name: ' || vcust.cust_name);
+  dbms_output.put_line('Mobile No: ' || vcust.mobile_no);
+  dbms_output.put_line('Dob is: ' || TO_CHAR(vcust.dob, 'DD-MON-YYYY'));
+END;
+/
+
+Control statement
+1. IF statement
+ 
+  if condition then
+  statement
+  end if;
+  
+  if condition then
+  statement
+  else
+  statement
+  end if;
+  
+  if condition then
+  statement
+  elsif if condition then
+  statement;
+  elsif if condition then
+  statement;
+  else
+  statement
+  end if;
+  
+2. Case Statement
+    
+    case when condition then
+    statement;
+    else
+
+--Example 1:
+declare
+a boolean:=False;
+begin
+if a then
+dbms_output.put_line('The condition is true');
+else
+dbms_output.put_line('The condition is false');
+end if;
+end;
+
+--Example 2:
+declare
+a number:=10;
+b number:=20;
+begin
+if a>b then
+dbms_output.put_line(a ||' is greater than '||b);
+else
+dbms_output.put_line(b ||' is greater than '||a);
+end if;
+end;
+
+--Example 3:
+DECLARE
+  a boolean := true;
+  b boolean := false;
+BEGIN
+  IF (a AND b) THEN
+     dbms_output.put_line('Line 1 - Condition is true');
+else
+     dbms_output.put_line('Line 2 - Condition is false');
+  END IF;
+END;  
+     
+--Example 4:
+DECLARE
+   a boolean := true;
+   b boolean := false;
+BEGIN
+   IF (a AND b) THEN
+      dbms_output.put_line('LINE 1');
+   END IF;
+   IF (a OR b) THEN
+      dbms_output.put_line('Line 2');
+   END IF;
+   IF (NOT a) THEN
+      dbms_output.put_line('Line 3');
+   ELSE
+      dbms_output.put_line('Line 4');
+   END IF;
+   IF (NOT b) THEN
+      dbms_output.put_line('Line 5');
+   ELSE
+      dbms_output.put_line('Line 6');
+   END IF;
+END;   
+
+
+-- Example 5:
+
+declare
+v_max_salary number(10);
+begin
+select max(salary) into v_max_salary
+from employees;
+dbms_output.put_line('The maximum salary'||v_max_salary);
+IF v_max_salary>100000 then
+delete from employees where salary=v_max_salary;
+end if;
+end;
+
+select * from employees;
+
+--CASE STATEMENT--
+
+declare 
+vsalary number(10);
+vlocal number(10):=&vlocal;
+begin
+select salary into vsalary from employees where employee_id=vlocal;
+case
+when vsalary > 15000 then
+dbms_output.put_line('Fair salary');
+when vsalary > 10000 and vsalary < 15000 then
+dbms_output.put_line('Avg salary');
+else
+dbms_output.put_line(vsalary||' Low salary');
+end case;
+end;
+
+-- Searched case:
+
+declare
+vsalary number(10);
+begin
+select salary into vsalary from employees where employee_id=101;
+case
+when vsalary > 15000 and vsalary < 20000 then
+dbms_output.put_line('Fair salary');
+when vsalary > 5000 and vsalary < 10000 then
+dbms_output.put_line('low salary');
+else
+dbms_output.put_line(vsalary ||'high salary');
+end case;
+end;
+
+--looping statements in plsql
+-- simple loop--
+declare
+c number:=1;
+begin
+loop
+dbms_output.put_line('Welcome to PLSQL '||c);
+c:=c+1;
+exit when c>5;
+end loop;
+end;
+
+-- to print even numbers 0 to 10
+
+declare
+c number:=0;
+begin
+loop
+c:=c+2;
+dbms_output.put_line(c);
+exit when c>=10;
+end loop;
+end;
+
+-- examples:
+declare
+c number:=1;
+begin
+loop
+dbms_output.put_line('Page '||c||' of 50');
+c:=c+1;
+exit when c>50;
+end loop;
+end;
+
+-- while loop--
+while(condition)
+loop
+executable statements;
+increment
+end loop;
+
+declare
+c number:=0;
+begin
+while(c<=5)
+loop
+dbms_output.put_line('Hello');
+c:=c+1;
+end loop;
+end;
+
+-- for loop
+
+FOR variable in [reverse] low value .. high value
+loop
+executable statements;
+end loop;
+
+declare
+c1 number;
+begin
+for c1 in 1..5
+loop
+dbms_output.put_line('Hello');
+end loop;
+end;
+
+-- What is cursor?
+-- cursor is defined as a private work area where the sql statement(SELECT & DML) is executed.
+
+set SERVEROUTPUT ON
+declare
+v_salary employees.salary%type;  -- scalar variable
+begin
+select salary into v_salary from employees where employee_id =100;
+dbms_output.put_line('the salary of the employee: '||v_salary);
+end;
+
+-- Select statement in PLSQL BLOCK
+SET SERVEROUTPUT ON
+-- CLEAR SCREEN is optional, depends on your tool
+
+-- PL/SQL block
+DECLARE
+    v_emp_salary hr.employees.salary%TYPE;  -- scalar variable
+BEGIN
+    -- Add a WHERE clause to fetch only one employee
+    SELECT salary 
+    INTO v_emp_salary 
+    FROM hr.employees
+    WHERE employee_id = 100;
+
+    dbms_output.put_line('The salary of the employee: ' || v_emp_salary);
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        dbms_output.put_line('No data found for this employee');
+    WHEN TOO_MANY_ROWS THEN
+        dbms_output.put_line('Many rows are returned from base table');
+END;
+/
+
+
+--instead of using scalar variable--
+-- to get all values from base table we can go for 2 methods:
+--1. composite variable
+--2. cursor
+
+--1. composite variable:-
+
+set SErveROUTPUT ON
+declare
+type nt_salary_type is table of number(10);
+nt_salary nt_salary_type := nt_salary_type();
+
+begin
+select salary bulk collect into nt_salary from employees;
+
+for i in nt_salary.first..nt_salary.last
+loop
+dbms_output.put_line(nt_salary(i));
+end loop;
+end;
+
+select * from employees;
+
+-- 2. Cursor
+-- cursor is defined as a work area where the sql statement is executed.
+
+two types of cursor--
+Implicit cursor
+Explicit cursor
+
+--1. Implicit cursor:- these are created by default when DML statements like Insert, Update and Delete statements are executed.
+--Implicit cursor is a session cursor that is created and managed by Oracle. Oracle Opens an implicit cursor everytime you run a DML, or SELECT statement.
+-- As a user we do not have a control on implicit cursor, but we can get information from its attributes.
+
+--Cursor Attributes:
+cursorname%isopen
+cursor_name%found
+curser_name%notfound
+cursor_name%rowcount
+
+-- %FOUND ATTRIBUT
+--A cursor attribute that can be appended to the name of a cursor or cursor variable. Before the first fetch from an open cursor, cursor_name%FOUND returns NULL. Afterward, it returns TRUE if the last fetch returned a row, or FALSE if the last fetch failed to return a row.
+
+--%ISOPEN ATTRIBUTE
+-- A cursor attribute that can be ppended to the name of ac cursor or cursor variable. If a cursor is open, cursor_name%ISOPEN returns TRUE; otherwise, it returns FALSE.
+
+--%NOTFOUND Attribute
+-- A cursor attribute that can be appended to the name of a cursor or cursor variable. Before the first fetch from an open cursor, cursore_namee%NOTFOUND returns NULL. Thereafter, it returns FALSE if the last fetch returned a row, or TRUE if the last fetch failed o return a row.
+
+--%ROWCOUNT ATTRIBUTE
+-- A Cursor attribute that can be appended to the name of a cursor or cursor variable. when a cursor is opened, %ROWCOUNT is zeroed, Before the first fetch, cursor_name%ROWCOUNT returns 0. Thereafter, it returns the number of rows fetched so far. Thenumber is incremented if the latst fetch returned a row
+
+
+
