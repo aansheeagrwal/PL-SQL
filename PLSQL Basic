@@ -1,0 +1,93 @@
+SET SERVEROUTPUT ON;
+-- Anonymous Block - very basic block
+
+Begin
+DBMS_OUTPUT.PUT_LINE('Welcome to Oracle PLSQL');
+END;
+
+-- PLSQL Anonymous Block to Add two numbers
+
+declare
+N1 number:=5;
+n2 number:=10;
+RESULT number;
+begin
+N1:=20;
+N2:=15;
+RESULT:=N1+N2;
+DBMS_OUTPUT.PUT_LINE(RESULT);
+END;
+
+-- PLSQL Anonynmous Block to add two numbers with decimal values
+
+declare
+number1 number(10,2):=20.5;
+number2 number(10,2):=10.5;
+result number(10,2);
+begin
+result := (number1+number2);
+dbms_output.put_line('The addition of '||number1||' and '||number2||' are: '||result);
+end;
+
+-- how to get user input in anonymous block
+declare
+number1 number(10,2):=&number1;
+number2 number(10,2):=&number2;
+result number(10,2);
+begin
+result := (number1+number2);
+dbms_output.put_line('The addition of '||number1||' and '||number2||' are: '||result);
+end;
+
+--how to re-assign a different value for a variable
+
+declare
+number1 number(10,2):=50;
+number2 number(10,2):=100;
+result number(10,2);
+begin
+number1:=20;
+number2:=30;
+result := (number1+number2);
+dbms_output.put_line('The addition of '||number1||' and '||number2||' are: '||result);
+end;
+
+--Constant variable declaration
+
+declare
+number1 constant number(10,2):=10.5;
+number2 number(10,2):=20.5;
+result number(10,2);
+begin
+--number1:=20; -- not allowed it shows an error
+number2:=30;
+result := (number1+number2);
+dbms_output.put_line('The addition of '||number1||' and '||number2||' are: '||result);
+end;
+
+-- Not null variable declaration
+
+declare 
+number1 constant number(10,2) :=3;
+number2 number(10,2) not null :=5;
+result number(10,2);
+begin
+--number1:=20; -- not allowed
+number2 :=10; -- you can change number2, but can not assign null
+result := (number1+number2);
+dbms_output.put_line('The addition of '||number1||' and '||number2||' are: '||result);
+end;
+
+--Select operation in PLSQL
+
+declare 
+v_ph_no varchar2(100);
+v_job_id varchar2(100);
+
+begin
+select phone_number,job_id into v_ph_no,v_job_id from hr.employees where employee_id=102;
+dbms_output.put_line('The phone number of the employee 102 is '||v_ph_no||' and job id is '||v_job_id);
+end;
+
+
+
