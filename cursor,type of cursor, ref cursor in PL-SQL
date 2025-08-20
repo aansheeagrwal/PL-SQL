@@ -1,0 +1,585 @@
+set SERVEROUTPUT ON;
+clear screen;
+begin
+update customer set mobile_no='+91-'||mobile_no where cust_id=&cust+id;
+if sql%notfound then
+dbms_output.put_line('NO - rows are updated');
+else
+dbms_output.put_line(SQL%ROWCOUNT||' - rows updated');
+end if;
+end;
+/
+
+-- Explicit cursor is a user defined cursor
+1) Declare the cursor
+2) Open the cursor
+3) Fetch the cursor
+4) Close the cusrsor
+
+-- How to declare a cursor:
+
+CURSOR cursor_name
+IS
+  SELECT_statement;
+  
+cursor C1     --C1 is the cursor variable
+is
+select emp_name from employees;
+
+2) open C1
+
+3) fetch cursor name into variable1,variable2
+
+4) close c1
+
+-- Example 1:
+
+declare 
+vemp_salary EMPLOYEES.salary%TYPE;
+cursor c1 is select salary from employees; --Cursor declaration
+begin
+
+open c1;                                -- Open cursor
+
+fetch c1 into vemp_salary;     --Fetch value from cursor pointer
+dbms_output.put_line(vemp_salary);
+fetch c1 into vemp_salary;
+dbms_output.put_line(vemp_salary);
+fetch c1 into vemp_salary;
+dbms_output.put_line(vemp_salary);
+
+close c1;                              --Close cursor
+
+end;
+
+-- Example 2:
+SET SERVEROUTPUT ON;
+declare
+vemp_salary EMPLOYEES.salary%TYPE;
+cursor c1 is select salary from employees;  --Cursor declaration
+begin
+
+open c1;                    -- Open cursor
+
+loop
+fetch c1 into vemp_salary;  --Fetch value from cursor pointer
+exit when c1%notfound;
+dbms_output.put_line(vemp_salary);
+
+end loop;
+dbms_output.put_line('-----**********--------------');
+dbms_output.put_line('Total no of recorded fetched from base table-'||c1%rowcount);
+close c1;
+
+end;
+
+--Example 3:
+
+declare
+vemp_name EMPLOYEES.FIRST_NAME%TYPE;
+vemp_salary EMPLOYEES.salary%TYPE;
+cursor c1 is select first_name,salary from employees;
+begin
+open c1;
+loop
+fetch c1 into vemp_name,vemp_salary;
+exit when c1%notfound;
+dbms_output.put_line(vemp_name||vemp_salary);
+end loop;
+close c1;
+end;
+
+-- The following PL/SQL block uses %ROWCOUNT to fetch the names and salaries of the five highest-paid employess;
+
+DECLARE
+     CURSOR c1 is 
+     SELECT last_name, employee_id, salary FROM employees
+        ORDER BY salary DESC;  -- start with highest-paid employees
+    my_name employees.last_name%TYPe;
+    my_empno employees.employee_id%TYPE;
+    my_sal employees.salary%TYPE;
+BEGIN
+   OPEN c1;
+   LOOP
+      FETCH c1 INTO my_name, my_empno, my_sal;
+      EXIT WHEN (c1%ROWCOUNT > 5) OR (c1%NOTFOUND);
+      dbms_output.put_line('Employee ' || my_name ||' (' || my_empno || ') makes ' || my_sal
+      );
+   END LOOP;
+   CLOSE c1;
+END;
+/
+    
+set SERVEROUTPUT ON
+declare
+v_salary hr.employees.salary%type;
+begin
+select salary into v_salary from hr.employees where employee_id=100;
+dbms_output.put_line('The salary of the employee:'||v_salary);
+end;
+
+-- Bulk Collect
+
+set SERVEROUTPUT ON
+declare
+type nt_salary_type is table of number(10);
+nt_salary nt_salary_type := nt_salary_type();
+
+begin
+select salary bulk collect into nt_salary from hr.employees;
+
+for i in nt_salary.first..nt_salary.last
+loop
+dbms_output.put_line(nt_salary(i));
+end loop;
+end;
+ 
+ 
+ 
+ 
+ --The GV$OPEN_CURSOR (or the V$OPEN_CURSOR) view shows all the cursors that each user session has currently opened and parsed, or cached.
+ --you can issue the following query to identify the session with a high number of opened and parsed or cached cursors.
+ 
+ -- Execute in ADMIN schema
+ 
+ select * from v$open_cursor where user_name='HR';
+ 
+ SQL> select saddr, sid, user_name, address,hash_value,sql_id,sql_text
+ from gv$open_cursor where sid in (select sid from v$open_cursor
+ group by sid having count(*) > &threshold);
+ 
+ --How many cursor we can open in a session?
+ 
+ select * from v$parameter where name='open_cursors';
+ 
+ -- CURSOR WITH RETURN CLAUSE
+ 
+ CURSOR cursor_name
+ RETURN field%ROWTYPE
+ IS
+    SELECT_statement;
+    
+-- Cursor for loop
+
+--Syntax:
+
+FOR record_index in cursor_name
+LOOP
+   (...statements...)
+END LOOP;
+
+--Example
+
+Declare
+cursor c1 is select first_name, salary from hr.employees;
+begin
+for record in c1      -- record is a composite data type here
+loop
+dbms_output.put_line(record.first_name||record.salary);
+end loop;
+end;
+
+-- Example
+set SERVEROUTPUT ON
+declare
+
+cursor c1 is select phone_number, salary from hr.employees;
+
+begin
+for rec in c1 ---record composite data type
+loop
+dbms_output.put_line('Phone_number-'||rec.phone_number || '-' || 'Salary-'||rec.salary);
+end loop;
+end;
+
+
+--- example
+
+select emp_name, job_id,salary for particular dept using cursor for loop;
+
+--- CURSOR FOR LOOP
+
+DECLARE 
+      cursor c1(no number) is select * from hr.employees
+      where department_id = no;
+      tmp hr.employees%rowtype;
+BEGIN
+      FOR tmp IN c1(30) LOOP
+      dbms_output.put_line('EMP_NO:     '||tmp.employee_id);
+      dbms_output.put_line('EMP_NAME:   '||tmp.first_name);
+      dbms_output.put_line('EMP_Dept:   '||tmp.department_id);
+      dbms_output.put_line('EMP_Salary: '||tmp.salary);
+      END LOOP;
+--CLOSE c1;
+END;
+
+--CURSOR WITH PARAMETERS:
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    vemp_name hr.employees.first_name%TYPE;
+    vemp_salary hr.employees.salary%TYPE;
+
+    CURSOR c_dept30 IS
+        SELECT first_name, salary FROM hr.employees WHERE department_id = 30;
+
+    CURSOR c_dept60 IS
+        SELECT first_name, salary FROM hr.employees WHERE department_id = 60;
+BEGIN
+    OPEN c_dept30;
+    LOOP
+        FETCH c_dept30 INTO vemp_name, vemp_salary;
+        EXIT WHEN c_dept30%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(vemp_name || ' - ' || vemp_salary);
+    END LOOP;
+    CLOSE c_dept30;
+
+    OPEN c_dept60;
+    LOOP
+        FETCH c_dept60 INTO vemp_name, vemp_salary;
+        EXIT WHEN c_dept60%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(vemp_name || ' - ' || vemp_salary);
+    END LOOP;
+    CLOSE c_dept60;
+END;
+/
+
+
+CURSOR cursor_name (parameter_list)
+IS
+ SELECT_statement;
+ 
+ 
+DECLARE
+cursor c1(cdept_no number) is select first_name,salary from hr.employees where department_id=cdept_no;
+begin
+for record in c1(30)
+loop
+dbms_output.put_line(record.first_name||record.salary);
+end loop;
+end;
+
+-- Another example:
+SET SERVEROUTPUT ON;
+
+DECLARE
+    -- Variable to hold salary
+    v_salary NUMBER(10);
+
+    -- Cursor with parameter for department
+    CURSOR c1(p_dept_no NUMBER) IS
+        SELECT salary
+        FROM hr.employees
+        WHERE department_id = p_dept_no;
+
+BEGIN
+    -- Department 30
+    OPEN c1(30);
+    DBMS_OUTPUT.PUT_LINE('---This is the data for department_id 30----');
+    LOOP
+        FETCH c1 INTO v_salary;
+        EXIT WHEN c1%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(v_salary);
+    END LOOP;
+    CLOSE c1;
+
+    -- Department 60
+    OPEN c1(60);
+    DBMS_OUTPUT.PUT_LINE('---This is the data for department_id 60----');
+    LOOP
+        FETCH c1 INTO v_salary;
+        EXIT WHEN c1%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(v_salary);
+    END LOOP;
+    CLOSE c1;
+
+END;
+/
+
+
+set SERVEROUTPUT ON
+declare
+v_salary hr.employees.salary%type;
+begin
+select salary into v_salary from hr.employees where employee_id=100;
+dbms_output.put_line('The salary of the employee:'||v_salary);
+end;
+
+-- Bulk Collect
+
+set SERVEROUTPUT ON
+declare
+type nt_salary_type is table of number(10);
+nt_salary nt_salary_type := nt_salary_type();
+
+begin
+select salary bulk collect into nt_salary from hr.employees;
+
+for i in nt_salary.first..nt_salary.last
+loop
+dbms_output.put_line(nt_salary(i));
+end loop;
+end;
+ 
+ 
+ 
+ 
+ --The GV$OPEN_CURSOR (or the V$OPEN_CURSOR) view shows all the cursors that each user session has currently opened and parsed, or cached.
+ --you can issue the following query to identify the session with a high number of opened and parsed or cached cursors.
+ 
+ -- Execute in ADMIN schema
+ 
+ select * from v$open_cursor where user_name='HR';
+ 
+ SQL> select saddr, sid, user_name, address,hash_value,sql_id,sql_text
+ from gv$open_cursor where sid in (select sid from v$open_cursor
+ group by sid having count(*) > &threshold);
+ 
+ --How many cursor we can open in a session?
+ 
+ select * from v$parameter where name='open_cursors';
+ 
+ -- CURSOR WITH RETURN CLAUSE
+ 
+ CURSOR cursor_name
+ RETURN field%ROWTYPE
+ IS
+    SELECT_statement;
+    
+-- Cursor for loop
+
+--Syntax:
+
+FOR record_index in cursor_name
+LOOP
+   (...statements...)
+END LOOP;
+
+--Example
+
+Declare
+cursor c1 is select first_name, salary from hr.employees;
+begin
+for record in c1      -- record is a composite data type here
+loop
+dbms_output.put_line(record.first_name||record.salary);
+end loop;
+end;
+
+-- Example
+set SERVEROUTPUT ON
+declare
+
+cursor c1 is select phone_number, salary from hr.employees;
+
+begin
+for rec in c1 ---record composite data type
+loop
+dbms_output.put_line('Phone_number-'||rec.phone_number || '-' || 'Salary-'||rec.salary);
+end loop;
+end;
+
+
+--- example
+
+select emp_name, job_id,salary for particular dept using cursor for loop;
+
+--- CURSOR FOR LOOP
+
+DECLARE 
+      cursor c1(no number) is select * from hr.employees
+      where department_id = no;
+      tmp hr.employees%rowtype;
+BEGIN
+      FOR tmp IN c1(30) LOOP
+      dbms_output.put_line('EMP_NO:     '||tmp.employee_id);
+      dbms_output.put_line('EMP_NAME:   '||tmp.first_name);
+      dbms_output.put_line('EMP_Dept:   '||tmp.department_id);
+      dbms_output.put_line('EMP_Salary: '||tmp.salary);
+      END LOOP;
+--CLOSE c1;
+END;
+
+--CURSOR WITH PARAMETERS:
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    vemp_name hr.employees.first_name%TYPE;
+    vemp_salary hr.employees.salary%TYPE;
+
+    CURSOR c_dept30 IS
+        SELECT first_name, salary FROM hr.employees WHERE department_id = 30;
+
+    CURSOR c_dept60 IS
+        SELECT first_name, salary FROM hr.employees WHERE department_id = 60;
+BEGIN
+    OPEN c_dept30;
+    LOOP
+        FETCH c_dept30 INTO vemp_name, vemp_salary;
+        EXIT WHEN c_dept30%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(vemp_name || ' - ' || vemp_salary);
+    END LOOP;
+    CLOSE c_dept30;
+
+    OPEN c_dept60;
+    LOOP
+        FETCH c_dept60 INTO vemp_name, vemp_salary;
+        EXIT WHEN c_dept60%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(vemp_name || ' - ' || vemp_salary);
+    END LOOP;
+    CLOSE c_dept60;
+END;
+/
+
+
+CURSOR cursor_name (parameter_list)
+IS
+ SELECT_statement;
+ 
+ 
+DECLARE
+cursor c1(cdept_no number) is select first_name,salary from hr.employees where department_id=cdept_no;
+begin
+for record in c1(30)
+loop
+dbms_output.put_line(record.first_name||record.salary);
+end loop;
+end;
+
+-- Another example:
+SET SERVEROUTPUT ON;
+
+DECLARE
+    -- Variable to hold salary
+    v_salary NUMBER(10);
+
+    -- Cursor with parameter for department
+    CURSOR c1(p_dept_no NUMBER) IS
+        SELECT salary
+        FROM hr.employees
+        WHERE department_id = p_dept_no;
+
+BEGIN
+    -- Department 30
+    OPEN c1(30);
+    DBMS_OUTPUT.PUT_LINE('---This is the data for department_id 30----');
+    LOOP
+        FETCH c1 INTO v_salary;
+        EXIT WHEN c1%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(v_salary);
+    END LOOP;
+    CLOSE c1;
+
+    -- Department 60
+    OPEN c1(60);
+    DBMS_OUTPUT.PUT_LINE('---This is the data for department_id 60----');
+    LOOP
+        FETCH c1 INTO v_salary;
+        EXIT WHEN c1%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(v_salary);
+    END LOOP;
+    CLOSE c1;
+
+END;
+/
+
+
+
+--REF Cursor
+
+A REF cursor is a datatype that hold a cursor value in the same way that a VARCHAR@ variable will hold a string value.
+
+A REF Cursor can be opened on the server and passed to the client as a unit rather than fetching one row at a time. One can use a Ref Cursor as a target of an assignement, and it can be passed as parameter to other program units.
+
+--REF Cursors are opened when an 'OPEN FOR' statement. In most other ways they behave similar to normal cursors.
+
+A REF CURSOR is a PL/SQL data type whose value is the memory address of a query work area on the database.In essence, a REF CURSOR is apointer or a handle to a result set on the database. REF CURSOR are represented through the OracleRefCursor ODP.NET class.
+
+A ref cursor is a variable, defined as a cursor type, which will point to, or reference a cursor result. The advanatge taht is a ref cursor has over a plain cursor is that is ca n be passed as a variable to a procedure or a function. The REF CURSOR can be assigned to other REF CURSOR variables.
+
+This is a powerful capability in that the cursor can be opened, then passed to another block for processing, then returned to the original block to be closed. the cursor variable can also be returned by a function and assigned to another variable. The REF CURSOR variable is not a cursor, but a variable that points to a cursor before assigning a cursor variable, a cursor type must be defined.
+
+To declare a cursor variable, we can use the REF CURSOR is the data type.
+
+-- What is the syntax for the REF CURSOR
+
+DECLARE
+ TYPE [cursor_variable_name] IS REF CURSOR [RETURN (return_type)];
+ 
+PL/SQL has two forms of REF CURSOR types:
+1. Strong typed REF CURSOR -- Any REF CurSoR which has a fixed return type is called a Strong Ref Cursor.
+2. Weak typed REF CURSOR -- weak ref cursors are thsoe which do not have any return type.
+
+The following shows an example of a strong REF CURSOR.
+
+DECLARE
+      TYpe customer_t IS REF CURSOR RETURN customer%ROWTYPE;
+      c_customer customer_t;
+      
+This form of cursor variable called strong typed REF CURSOR because the cursor variable is always associated with a specific record structure, or type
+
+And here is an example of a weak typed REF CURSOR decalration taht is not associated with any specific structure
+
+DECLARE
+     TYPE customer_t IS REF CURSOR;
+     c_customer customer_t;
+     
+since weak REF Cursors do not have any fixed return type thus they are open to all select statements. And this makes them one of the msot used REF CURSOrs in PL/SQl. 
+
+     
+--Example:
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    TYPE ref_cursor IS REF CURSOR;
+    rc_employees_list ref_cursor;
+    v_first_name VARCHAR2(100);
+BEGIN
+    -- Open the ref cursor
+    OPEN rc_employees_list FOR SELECT first_name FROM hr.employees;
+
+    -- Fetch loop
+    LOOP
+        FETCH rc_employees_list INTO v_first_name;
+        EXIT WHEN rc_employees_list%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(v_first_name);
+    END LOOP;
+
+    -- Close cursor
+    CLOSE rc_employees_list;
+END;
+/
+
+--- Strong typed REF CURSOR
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    -- REF CURSOR returning HR.EMPLOYEES rowtype
+    TYPE ref_cursor IS REF CURSOR RETURN hr.employees%ROWTYPE;
+    rc_employees_list ref_cursor;
+
+    -- Row variable must match the REF CURSOR type
+    v_emp_row hr.employees%ROWTYPE;
+
+BEGIN
+    -- Open the ref cursor
+    OPEN rc_employees_list FOR SELECT * FROM hr.employees;
+
+    -- Loop to fetch data
+    LOOP
+        FETCH rc_employees_list INTO v_emp_row;
+        EXIT WHEN rc_employees_list%NOTFOUND;
+
+        DBMS_OUTPUT.PUT_LINE('The employee_name - ' || v_emp_row.first_name);
+        DBMS_OUTPUT.PUT_LINE('The employee_salary - ' || v_emp_row.salary);
+    END LOOP;
+
+    -- Close the cursor
+    CLOSE rc_employees_list;
+END;
+/
+
