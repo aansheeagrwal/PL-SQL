@@ -1,0 +1,472 @@
+
+--Named Block:
+-- Stored procedure
+--Function
+--Triggers
+
+Stored Procedure:-
+
+-- stored as precompiled object
+--compile once and executed multiple terms
+--provides reusuability
+--procedure are explicitly executed by user
+
+Types of procedure:
+1) Static procedure:-
+--will not contain any arguments
+--always display same output
+
+2) Dynamic procedure:-
+with argument variable
+
+procedure contains 2 parts:
+
+procedure specification
+procedure body
+
+
+specification 
+
+create or replace procedure <name> (arg_variable IN datatype, arg variable2 datatype)
+IS
+
+
+--Syntax
+
+cretae procedure proc_name()
+is
+
+begin
+
+end;
+
+cretae or replace procedure <name> (arg_variable IN datatype, arg variable2 datatype)
+IS
+
+
+--- Another one
+
+CREATE (OR REPLACE) PROCEDURE proc_name (list of parameters)
+AS|IS
+    DEclaration section
+BEGIN
+    Execution section
+EXCEPTION
+    Exception section
+END;    
+
+-- it shows an error in the above code--
+-- so now the solution of this code--
+CREATE OR REPLACE PROCEDURE proc_name (
+    p_id   IN NUMBER,
+    p_name IN VARCHAR2
+)
+IS
+    v_temp VARCHAR2(100);
+BEGIN
+    -- Execution section
+    v_temp := 'Hello ' || p_name;
+    DBMS_OUTPUT.PUT_LINE('ID: ' || p_id || ', Name: ' || v_temp);
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+ 
+-- IS- marks the begining of the body of the procedure
+SET SERVEROUTPUT ON;
+
+CREATE OR REPLACE PROCEDURE greetings
+AS
+BEGIN
+    dbms_output.put_line('Welcome to PLSQL Procedure Session!');
+END;
+
+exec greetings;
+ 
+ 
+-- How to execute procedure:
+
+exec greetings;
+
+execute greetings;
+
+begin
+greetings;
+end;
+/
+
+---------------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE greetings1(p_name IN varchar2)
+AS
+BEGIN
+    dbms_output.put_line('Hello'||p_name);
+END;
+
+exec greetings1('Welcome to PLSQL');
+
+--------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE greetings1 IS
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('Welcome to PLSQL Procedure Session!');
+END;
+/
+SET SERVEROUTPUT ON;
+EXEC greetings1;
+
+-------------------------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE total1(N1 IN number, N2 IN number,total out number)
+AS
+BEGIN
+total:=N1+N2;
+END;
+
+declare
+x number;
+begin
+total1(7,8,x);
+dbms_output.put_line('Total: '||x);
+end;
+
+----------------------------------------------------------------------
+
+create procedure INOUT_Multiplication(x IN OUT number)
+AS
+begin
+x:=x*5;
+end;
+
+
+declare
+x number;
+begin
+x:=6;
+INOUT_Multiplication(x);
+dbms_output.put_line('multiplication: '||x);
+end;
+
+---------------------------------------------------------------------
+SET SERVEROUTPUT ON;
+
+CREATE OR REPLACE PROCEDURE total_salary IS
+    v_total NUMBER;
+BEGIN
+    -- Use your actual table name here
+    SELECT SUM(salary) INTO v_total
+    FROM hr.employees;   -- replace with HR.employees if needed
+
+    DBMS_OUTPUT.PUT_LINE('Total Salary = ' || v_total);
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+SELECT * FROM hr.employees;
+
+EXEC total_salary;
+
+
+--------------------------------------------------------------------------------
+
+declare
+vemp_salary HR.EMPLOYEES.salary%TYPE;
+cursor c1 is select salary from HR.employees;  ---Cursor declaration
+begin
+
+open c1;                           -- Open cursor
+
+fetch c1 into vemp_salary;          ---Fetch value from cursor pointer
+dbms_output.put_line(vemp_salary);
+fetch c1 into vemp_salary;
+dbms_output.put_line(vemp_salary);
+fetch c1 into vemp_salary;
+dbms_output.put_line(vemp_salary);
+
+close c1;                            -- close cursor
+
+end;
+
+--------------------------------------------------------------------
+
+declare
+vemp_salary HR.EMPLOYEES.salary%TYPE;
+cursor c1 is select salary from HR.employees;     --Cursor declaartion
+begin
+
+open c1;                                  --- Open Cursor
+
+loop
+fetch c1 into vemp_salary;                 --Fetch value from cursor pointer
+exit when c1%notfound;
+dbms_output.put_line(vemp_salary);
+
+end loop;
+dbms_output.put_line('-----********----------------');
+dbms_output.put_line('Total no of record fetched from base table-'||c1%rowcount);
+close c1;
+end;
+
+--------------------------------------------------------------------
+
+declare
+vemp_name HR.EMPLOYEES.FIRST_NAME%TYPE;
+vemp_salary HR.EMPLOYEES.salary%TYPE;
+cursor c1 is select first_name,salary from HR.employees;
+begin
+open c1;
+loop
+fetch c1 into vemp_name,vemp_salary;
+exit when c1%notfound;
+dbms_output.put_line(vemp_name||vemp_salary);
+end loop;
+close c1;
+end;
+
+-- The following PL/SQL block uses %ROWCOUNT to fetch the names and salaries of the five highest-paid employees;
+
+DECLARE
+     CURSOR c1 is
+     SELECT last_name, employee_id, salary FROM HR.employees
+          ORDER BY salary DESC;   --- start with highest-paid employee
+     my_name HR.employees.last_name%TYPE;
+     my_empno HR.employees.employee_id%TYPE;
+     my_sal HR.employees.salary%TYPE;
+BEGIN
+    OPEN c1;
+    LOOP
+        FETCH c1 INTO my_name, my_empno, my_sal;
+        EXIT WHEN (c1%ROWCOUNT > 5) OR (c1%NOTFOUND);
+        dbms_output.put_line('Employee ' || my_name || ' {' || my_empno || ') makes ' || my_sal);
+    END LOOP;
+    CLOSE c1;
+END;
+/
+
+-------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE pro1(
+    p_empno IN NUMBER,
+    p_emp OUT HR.employees%ROWTYPE
+) IS
+BEGIN
+    SELECT *
+    INTO p_emp
+    FROM HR.employees
+    WHERE employee_id = p_empno;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('No employee found with ID ' || p_empno);
+END;
+/
+
+
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    emp_no NUMBER;
+    temp HR.employees%ROWTYPE;
+BEGIN
+    emp_no := 105;
+    pro1(emp_no, temp);
+    
+    DBMS_OUTPUT.PUT_LINE('Employee ID: ' || temp.employee_id);
+    DBMS_OUTPUT.PUT_LINE('First Name: ' || temp.first_name);
+    DBMS_OUTPUT.PUT_LINE('Salary: ' || temp.salary);
+END;
+/
+
+select * from all_procedures where owner='HR';
+
+select text from all_source where owner='HR' and type='PROCEDURE' and name='ADD_JOB_HISTORY';
+
+---------Procedure with cursor---
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    emp_no NUMBER;
+    temp HR.employees%ROWTYPE;
+BEGIN
+    emp_no := 105;
+    get_employees(emp_no, temp);
+
+    DBMS_OUTPUT.PUT_LINE('Employee ID: ' || temp.employee_id);
+    DBMS_OUTPUT.PUT_LINE('First Name: ' || temp.first_name);
+    DBMS_OUTPUT.PUT_LINE('Salary: ' || temp.salary);
+END;
+/
+
+CREATE OR REPLACE PROCEDURE get_employees(p_empno IN NUMBER, p_emp OUT HR.employees%ROWTYPE) IS
+BEGIN
+    SELECT *
+    INTO p_emp
+    FROM HR.employees
+    WHERE employee_id = p_empno;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('No employee found with ID ' || p_empno);
+END;
+/
+
+
+CREATE OR REPLACE PROCEDURE get_top3_employees AS
+    emp_first_name HR.employees.first_name%TYPE;
+    emp_salary HR.employees.salary%TYPE;
+    CURSOR c1 IS
+        SELECT first_name, salary FROM HR.employees WHERE rownum <= 3;
+BEGIN
+    OPEN c1;
+    LOOP
+        FETCH c1 INTO emp_first_name, emp_salary;
+        EXIT WHEN c1%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(emp_first_name || ' - ' || emp_salary);
+    END LOOP;
+    CLOSE c1;
+END;
+/
+
+----Functions in PLSQL---
+A function is a named PL/SQL block which is similar to a procedure. The major difference between PL/SQL function or procedure, function return always value where as procedure may or may not return value.
+
+A function is the subprogram that returns a value when called. It is stored in database or declared within a block.
+
+Functions can return more than one value via OUT parameter. functions can accept default values
+
+
+-------------------------------------------------------------------
+
+CREATE [OR REPLACE] FUNCTION function_name [(
+  parameter_1 [IN] [OUT] data_type,
+  parameter_2 [IN] [out] data_type,
+  parameter_3 [IN] [out] data_type]
+   RETURN return_data_type
+IS
+--- the declaration statements
+BEGIN
+  -- the excecutable statements
+  return return_value;
+  EXCEPTION
+  --- the exception-handling statements
+END;  
+--------------------------------------------------------------
+
+An IN parameter is a read-only parameter. If the function tries to change value of the IN parameter the compiler will isssue an error message. you can pass a constant, literal, initalized variable, or  expression to the function as the IN parameter.
+
+An OUT parameter is a write-only parameter. The OUT parameters are used to return values back to the calling program. An OUT parameter is initialized to default value of its type when the function begins regardless of its originial value before being passed to the function.
+
+An IN OUT parameter is read and write parameter. It means the function reads value from an IN OUT parameter, change its value and return it back to the calling program.
+
+The function must have at least one RETURN statement in the execution section. the RETURN clause in the function header specfies the data type of returned value.
+
+---------------------------------------------------------------------
+
+create or replace function f_count
+return number
+is
+v_count number;
+begin
+select count(*) into v_count from HR.employees;
+return v_count;
+end;
+
+SELECT f_count() AS total_employees FROM dual;
+
+------------------------------------------------------------------------
+
+create or replace function f_count(v_department_id out number,v_count out number)
+return number
+is
+v_count number;
+v_department_id number;
+begin
+select department_id,count(*) into v_count from employees
+where department_id is not null group by department_id;
+return v_count;
+end;
+
+----------------------------------------------------------
+create or replace function hello_function(p_name IN varchar2)
+return varchar2
+as
+v_result varchar2(100);
+begin
+v_result:='Hello '||p_name;
+return v_result;
+end hello_function;
+
+select HELLO_FUNCTION('chandra') from dual;
+
+-----------------------------------------------------
+CREATE OR REPLACE FUNCTION salary_hike(p_emp_id IN NUMBER)
+RETURN NUMBER
+AS
+    v_job   HR.employees.job_id%TYPE;
+    v_sal   HR.employees.salary%TYPE;
+    v_raise NUMBER(3,2);
+    v_new_sal NUMBER(10,2);
+BEGIN
+    SELECT job_id, salary
+    INTO v_job, v_sal
+    FROM HR.employees
+    WHERE employee_id = p_emp_id;
+
+    IF v_job = 'AD_VF' THEN
+        IF v_sal < 2000 THEN
+            v_raise := 0.50;
+        ELSE
+            v_raise := 0;
+        END IF;
+    ELSIF v_job = 'CLERK' THEN
+        IF v_sal < 1500 THEN
+            v_raise := 0.20;
+        ELSE
+            v_raise := 0;
+        END IF;
+    ELSE
+        v_raise := 0;
+    END IF;
+
+    v_new_sal := v_sal + (v_sal * v_raise);
+
+    RETURN v_new_sal;
+END salary_hike;
+/
+
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    emp_id NUMBER := 105;
+    new_salary NUMBER;
+BEGIN
+    new_salary := salary_hike(emp_id);  -- Call the function
+    DBMS_OUTPUT.PUT_LINE('New salary: ' || new_salary);
+END;
+/
+
+
+SELECT salary_hike(101) AS new_salary
+FROM dual;
+
+select * from HR.employees;
+
+-----------------------------------------------------------------------------
+
+create or replace function IS_LEAP_YEAR (nYr in number) return varchar2 is
+v_day varchar2(2);
+
+begin
+   select to_char(last_day(to_date( '01-FEB-'|| to_char(nYr), 'DD-MON-YYYY')), 'DD')
+   into v_day from dual;
+   if v_day = '29' then 
+     return 'LEAP YEAR';
+   else
+     return 'NON LEAP YEAR';
+   end if;
+end;   
+
