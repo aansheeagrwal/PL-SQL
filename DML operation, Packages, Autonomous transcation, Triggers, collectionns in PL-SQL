@@ -1,0 +1,1058 @@
+----- DML Operations & Function Overloading in PLSQL-----
+
+-------DML Transcations in PL/SQL:-
+
+DML stands for Data Manipulation Language. These statements are mainly used to perform the manipulation activity. It deals with the below operations.
+
+Data Insertion
+Data Upadate
+Data Deletion
+Data Selection
+
+In PL/SQL, we can do the data manipulation only by using the SQL commands.
+
+---INSERT Statement:-
+
+BEGIN
+   INSERT INTO <table_name>(<column1 >,<column2>,...<column_n>)
+      VALUES(<value1><value2>,...:<value_n>);
+END;
+
+
+------Example:-------
+
+begin
+insert into customer values( 100,'NIC IT Academy', 9090909090,32,20);
+COMMIT;
+end;
+
+----------------------------------------------------------------------
+select * from customer;
+
+drop table customer;
+
+create table customer 
+(
+cust_id number, 
+cust_name varchar2(30),
+mobile number(10), 
+age number,
+city_id number
+) ;
+
+create or replace procedure insert_cust
+(in_cust_id number, in_cust_name varchar2, in_mobile_no number, in_age number, in_city_id number)
+as
+begin
+insert into customer values ( in_cust_id,in_cust_name,in_mobile_no,in_age,in_city_id);
+COMMIT;
+end;
+
+select * from customer;
+
+truncate table customer;
+exec insert_cust(100,'NIC IT Academy',7010080468,30,23);
+
+
+----- Function overloading in PL/SQL--------
+---- Function Overloading:-----
+
+create or replace function ADD_NUM(A NUMBER, B NUMBER) return number
+IS
+c number;
+BEGIN
+   c:=A+B;
+   return c;
+END;
+
+select substr('Welcome to PLSQL Session',12) from dual;
+
+select substr('Welcome to PLSQL Session',12,5) from dual;
+
+create or replace function ADD_NUM(A NUMBER, B NUMBER, C NUMBER) return number
+IS
+d number;
+BEGIN
+   d:=A+B+C;
+   return D;
+END;
+
+select add_num(3,4,5) from dual;
+
+
+
+--------------------------------------------------------------------------------
+-----Package in PL/SQL---------------------------------------------------------
+
+Group logically related components:
+PL/SQL types
+Variables,data structures and exceptions
+Subprograms:Procedures and functions
+it consists of two parts:-
+A Specification
+A Body
+
+Enable the Oracle server to read multiple objects into memory at once.
+
+
+--Syntax:-
+
+CREATE [OR REPLACE] PACKAGE package_name IS|AS
+   public type and variable declarations
+   subprogram specifications
+END [package_name];
+
+---- the package specification.
+-> Variabels declared in the package specification are intialized to NULL by default.
+-> All the constructs declared in a package specification are visible to users who are granted privileges on the package.
+
+-----Example of package specification----
+
+CREATE OR REPLACE PACKAGE comm_pkg IS
+  std-comm NUMBER := 0.10;  --- initalized to 0.10
+  PROCEDURE reset_comm(new_comm NUMBER);
+END comm_pkg;
+/
+
+
+------ STD_COMM is a global variable initialized to 0.10.
+------ RESET_COMM is a public procedure used to reset the standard commisision based on the some busineess rules.It is implemented in the package body.
+
+------Creating the package body:-
+---Syntax:-
+
+CREATE [OR REPLACE] PACKAGE BODY package_name IS|AS
+   private type and variable declarations
+   subprogram bodies
+[BEGIN initialization statements]
+End [package_name];
+
+-----------------------------------------------------------------------------
+-> The OR REPLACE option drops and re-creates the package body.
+-> Identifiers defined in the package body are private and not visible outside the package body.
+-> All private constructs must be declared before they are referenced.
+-> Public constructs are visible to the package body.
+
+
+----- Example of package body------
+
+CREATE OR REPLACE PACKAGE BODY comm_pkg IS
+  FUNCTION validate (comm NUMBER) RETURN BOOLEAN IS
+    max-comm employees.commisssion_pct%type;
+  BEGIN
+    SELECT MAX(commission_pct) INTO max_comm
+    FROM  employees;
+    RETURN (comm BETWEEN 0.0 AND max_comm);
+  END validate;
+  PROCEDURE reset_comm (new_comm NUMBER) IS BEGIN
+    IF validate(new column) THEN
+       std_comm := new_comm;   ---reset public var
+    ELSE RAISE_APPLICATION_ERROR(
+            -20210, 'Bad Commission');
+    END IF;
+  END reset_comm;
+END comm_pkg;
+
+
+---- Invoke a function within the same package----
+
+CREATE OR REPLACE PACKAGE BODY comm_pkg IS ...
+   PROCEDURE reset_comm(new_comm NUMBER) IS
+   BEGIN
+     IF validate(new_comm) THEN
+        std_comm := new_comm;
+     ELSE ...
+     END IF;
+   END reset_comm;
+END comm_pkg;
+
+
+---- IVOKE a PACKAGE procedure in a different schema-------
+
+EXEcute comm_pkg.reset_comm(0.15)
+
+
+------------------------------------------------------------------------
+SET SERVEROUTPUT ON;
+
+create or replace package first_package
+as
+procedure greetings1(p_name IN varchar2);
+function hello_function(p_name IN varchar2)return varchar2;
+end;
+
+
+create or replace package body first_package as
+PROCEDURE greetings1(p_name IN varchar2)
+AS
+BEGIN
+   dbms_output.put_line('Hello'||p_name);
+END greetings1;
+function hello_function(p_name IN varchar2)
+return varchar2
+as
+v_result varchar2(100);
+begin
+v_result:='Hello'||p_name;
+return v_result;
+end hello_function;
+end;
+
+DECLARE
+  v_res VARCHAR2(100);
+BEGIN
+  v_res := first_package.hello_function('PLSQL');
+  DBMS_OUTPUT.PUT_LINE(v_res);
+END;
+/
+execute first_package.greetings1('PLSQL');
+EXEC first_package.greetings1('Chandrasekar');
+
+select first_package.hello_function('PLSQL')from dual;
+
+--select employee_id,salary,FIRST_PACKAGE.emp_func(employee_id) from employees;
+
+----------------------------------------------------------------------------
+
+CREATE OR REPLACE PACKAGE PKG_OVERLOAD_ADD_NUMBERS
+IS
+   PROCEDURE ADD_NUM(A NUMBER, B NUMBER);
+   PROCEDURE ADD_NUM(A NUMBER, B NUMBER, C NUMBER);
+END;
+
+CREATE OR REPLACE PACKAGE BODY PKG_OVERLOAD_ADD_NUMBERS
+IS
+  PROCEDURE ADD_NUM(A NUMBER, B NUMBER)
+  IS
+  BEGIN
+    DBMS_OUTPUT.PUT_LINE('Sum of two numbers are:'||to_char(A+B));
+  END;
+  
+  PROCEDURE ADD_NUM(A NUMBER, B NUMBER, C NUMBER)
+  IS
+  BEGIN
+     DBMS_OUTPUT.PUT_LINE('Sum of three numbers are:'||to_char(A+B+C));
+  END;
+END;  
+    
+  
+exec PKG_OVERLOAD_ADD_NUMBERS.add_num(5,6,7);
+
+----- Forward Refrence:-
+
+DECLARE
+
+procedure proc2;
+procedure proc1 is 
+begin
+proc2;
+dbms_output.put_line('This is procedure 1');
+end;
+
+procedure proc2 is 
+begin
+dbms_output.put_line('This is procedure 2');
+end;
+
+begin
+proc1;
+end;
+
+--------------------------------------------------------------------------
+---create a package specification-----
+CREATE OR REPLACE PACKAGE test_package_fdec AS
+  PROCEDURE int_proc;
+  PROCEDURE int_proc2;
+END test_package_fdec;
+/
+
+----- create a package body------
+CREATE OR REPLACE PACKAGE BODY test_package_fdec AS
+
+  PROCEDURE int_proc IS
+  BEGIN
+    DBMS_OUTPUT.PUT_LINE('this is int_proc');
+    int_proc2;  -- mutual call
+  END int_proc;
+
+  PROCEDURE int_proc2 IS
+  BEGIN
+    DBMS_OUTPUT.PUT_LINE('this is int_proc2');
+    -- careful: calling int_proc again will cause infinite loop
+    -- int_proc;  
+  END int_proc2;
+
+END test_package_fdec;
+/
+
+--- test the function---
+SET SERVEROUTPUT ON;
+
+BEGIN
+  test_package_fdec.int_proc;
+  -- or
+  test_package_fdec.int_proc2;
+END;
+/
+
+-----Advantages of using packages:---------------------
+
+-> Modularity: Encapsulating related constructs 
+->Easier maintenance: Keeping logically related functionality together.
+->Easier Application Design: Coding and compiling the specification and body seprately
+->Hiding informations: Only the declaratons in the package specification are visible and accesible to apllications.
+-> private constructs in the package body are hidden and inacessible.
+-> all coding is hidden in the package body.
+
+-----------------------------------------------------------------------------------
+create table employees_bkp as select * from employees where salary>10000;
+
+select * from employees_bkp;
+
+create or replace procedure cal_new_sal
+(emp_id_in IN number,comm_pct_in number,new_sal out number)
+as
+begin
+update employees_bkp set salary =salary+(salary*comm_pct_in) where employee_id=emp_id_in
+returning salary into new_sal;
+end;
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+  x NUMBER;   -- declare the variable
+BEGIN
+  cal_new_sal(100, 0.5, x);   -- call the procedure
+  DBMS_OUTPUT.PUT_LINE('New Salary = ' || x);
+END;
+/
+
+----------------------------------------------------------------------------------
+--- PRAGMA Autonomous transcation in Orcale:
+
+-- This feature is available from oracle 8i version
+-- It is an independent transcation and initiated by another ttranscation
+--- the main transcation is temporarily suspended and autonomous transcation -Invoked as child transcation
+
+--- Autonomous transcation must be committed or rollbacked
+
+-- it can be nested
+
+--- the child transcation can run independently of its parent
+--- the child transcation can commit/Rollback and parent txn resumes
+--- the parent transcation can continue without affecting child transcation
+
+------------------------------------------------------------------------
+
+drop table customer;
+CREATE TABLE customer (
+  cust_id   NUMBER(8),
+  cust_name VARCHAR2(30)
+);
+
+INSERT INTO customer VALUES (1000, 'Arun');
+INSERT INTO customer VALUES (1001, 'Sandeep');
+INSERT INTO customer VALUES (1002, 'John');
+INSERT INTO customer VALUES (1003, 'Rakesh');
+
+
+Commit;
+
+select * from customer;
+
+-------Autonomous transcation----
+
+insert into customer values(1000);
+
+insert into customer values(1001);
+
+select * from customer;
+
+declare
+pragms autonomous_transcation;
+begin
+for i in 1003..1010 loop
+insert into customer values(i);
+end loop;
+commit;
+end;
+
+rollback;
+
+select * from customer;
+
+---- Triggers in Orcale------------------------------
+
+A trigger is a special kind of stored procedure that automatically executes when an event occurs in the database server.
+
+DML triggers execute when a user tries to modify data through a data manipulation language(DML) event.
+DML events are INSERT, UPDATE, or DELETE statements on a table or view.
+
+Oracle allows you to define procedure that are implicitly execited when an INSERT, UPDATE, or DELETE statement is issued against the associated table. These procedures are called database triggers.
+
+--- Types of DML triggers:----------------------------
+
+Row level and statement level trigger
+
+---------firing poing: Before---------------------------
+
+BEFORE INSERT TRIGGER
+BEFORE UPDATE TRIGGER
+BEFORE DELETE TRIGGER
+
+---------Firing Poing: After-----------------------------------
+
+AFTER INSERT TRIGGER
+AFTER UPDATE TRIGGER
+AFTER DELETE TRIGGER
+
+-------------------------------------------------------------------------
+
+BEFORE INSERT
+It indicates that the trigger will fire before the INSERT operation is executed.
+
+CREATE [ OR REPLACE ] TRIGGER trigger_name
+BEFORE INSERT
+   ON table_name
+   [  FOR EACH ROW ]
+   
+DECLARE
+   -- variable declarations
+
+BEGIN
+   -- trigger code
+   
+EXCEPTION 
+   WHEN ....
+   --- exception handling
+   
+END;
+
+---------------------------------------------------------------------------------
+
+The synatx to a drop a trigger in Orcale in Oracle/PLSQL is:
+
+DROP TRIGGER trigger_name;
+
+-----------------------------------------------------------------------------------------
+
+The synatx for a disabling a trigger in Orcale in Oracle/PLSQL is:
+
+ALTER TRIGGER trigger_name DISABLE;
+
+---------------------------------------------------------------------------
+
+The synatx for enabling a trigger in Orcale in Oracle/PLSQL is:
+
+ALTER TRIGGER trigger_name ENABLE;
+
+----------------------------------------------------------------------------------
+The synatx for a disabling all triggers on a table in Orcale in Oracle/PLSQL is:
+
+ALTER TABLE table_name DISABLE ALL TRIGGERS;
+
+-------------------------------------------------------------------------------
+The synatx for a enable all triggers on a table in Orcale in Oracle/PLSQL is:
+
+ALTER TABLE table_name ENABLE ALL TRIGGERS;
+
+------------------------------------------------------------------------------
+
+create table after_delete
+(
+user_name varchar2(20),
+date_time date,
+count number(10));
+
+drop table after_delete;
+
+create or replace trigger after_delete_trig
+after delete on
+declare
+v_count number:=0;
+begin
+select count(*) into v_count from emp_join;
+insert into after_delete values(user,sysdate,v_count);
+end;
+
+select * from after_delete;
+
+select * from emp_join;
+
+delete from emp_join where emp_id=10000;
+
+-------------------------------------------------------------------------
+=================================
+Old and New Qualifiers:
+==================================
+            :old     :new
+ insert      NA       Yes
+ Update      Yes      Yes
+ Delete      Yes      NA
+ 
+ 
+ -------------------------------------------------------------------
+ 
+ create or replace triggers emp_trig_backup
+ before delete on emp_join
+ for each row
+ begin
+ insert into emp_join_bkp values(:old.emp_id,:old.emp_name,:old.salary,:old.mobile,sysdate,:old.country_id,:old.dept_id);
+ end;
+ 
+ select * from emp_join_bkp;
+ 
+ delete from emp_join where emp_id=10002;
+ 
+ 
+ 
+ create table customer as select * from s_customer_scd;
+ 
+ select * from customer;
+ 
+ create table customer_bkp_trig as select * from s_customer_scd where 1=2;
+ 
+ alter table customer_bkp_trig add date_of_deletion date;
+ 
+ alter table customer_bkp_trig add who_deleted varchar2(30);
+ 
+ select * from customer_bkp_trig;
+ 
+ 
+ create or replace trigger customer_trigger
+ before delete on customer
+ for each row
+ begin
+ insert into customer_bkp_trig values
+ (:old.customer_id,:old.first_name,"old.mobile,:old.address1,:old.zipcode,:old.countr,sysdate,user)
+ 
+ end;
+
+delete from customer where customer_id=100003;
+ 
+---------------------------------------------------------------
+
+select * from customer_details;
+
+delete from customer_details where cust_name='John';
+
+commit;
+
+create table customer_details_trigg_bp as select * from customer_details where 1=2;
+
+select * from customer_details_trigg_bkp;
+
+alter table customer_details_trigg_bkp add user_deleted varchar2(50);
+
+alter table customer_details_trigg_bkp add when_deleted date;
+
+select * from customer_details_tigg_bkp;
+
+create or replace trigger customer_details_trigger
+before delete on customer_details
+for each row
+begin
+insert into customer_details_trigg_bkp values
+(:old.cust_id,:old.cust_name,:old.mobile_no,:old.dob,:old.city,:old.country,user,sysdate);
+commit;
+end;
+
+delete from customer_details where cust_id=100001;
+
+------------------------------------------------------------------
+
+DDL TRIGGER:
+==============
+
+create table DDl_TRIGGER_TABLE_LOG
+(
+oracle_obj_name varchar2(50),
+oracle_user varchar2(50),
+ddl_execution_date date,
+ora_system_event varcahr2(50),
+oracle_obj_type varcahr2(50),
+oracle_obj_owner varchar2(50)
+);
+
+----- DDL TRIGGER SYNTAX----------
+
+create or replace trigger trigger_name
+after/before ddl/logon/logoff on database/schema
+begin
+executable statement;
+end;
+------------------------------------------------
+
+create or replace trigger ddl_trigger
+after ddl on schema
+begin
+insert into DDL_TRIGGER_TABLE_LOG
+values(ora_dict_obj_name,ora_login_user,sysdate,ora_sysevent,ora_dict_obj_type,ora_dict_obj_owner);
+end;
+
+drop table customer_bkp;
+
+select * from DDL_TRIGGER_TABLE_LOG:
+
+--first drop the trigger then drop associated table---
+
+drop trigger ddl_trigger;
+
+drop table DDL_TRIGGER_TABLE_LOG;
+-------------------------------------------------------------------
+======================
+logon/logoff trigger:
+======================
+
+create tabel user_event_log
+(
+ora_login_user_varcahr2(30),
+ora_sysevent varchar2(30),
+creation_date date);
+
+create or replace trigger logon_ddl_trigger
+after logon on schema
+begin
+insert into hr.user_event_log
+values(ora_login_user,sysdate, ora_sysevent);
+end;
+
+select * from user_event_log;
+--------------------------------------------------------------------------
+
+==================================
+Order of Trigger exceution:
+=================================
+
+create table student
+{
+sno number,
+sname varchar2(50),
+sdoj date,
+sresult varchar2(30)
+);
+
+create sequence log_seq;
+
+create or replace trigger st_bf_ins
+before insert on student
+begin
+DBMS_OUTPUT.PUT_LINE("Statement leel-before Insert :'||log_seq.nextval);
+end;
+
+create or replace trigger row_bf_ins
+before insert on student
+for each row
+begin
+DBMS_OUTPUT.PUT_LINE('Row level - before Insert :'||log_seq.nextval);
+end;
+
+create or replace trigger row_af_ins
+after insert on student
+for each row
+begin
+DBMS_OUTPUT.PUT_LINE('Row level - After Insert :'||log_seq.nextval);
+end;
+
+SET SERVEROUTPUT ON
+
+begin
+insert into student (sno,sname,sdoj,sresult) values(1,'Arun',sysdate,'Pass');
+end;
+
+select * from student;
+
+------------------------------------------------------------------------------
+create or replace trigger emp_trig_backup
+before delete on emp_join
+for each row
+begin
+insert into emp_join_bkp values(:old.emp_id,:old.emp_name,:old.salary,:old.mobile,sysdate,:old.country_id,:old.dept_id);
+end;
+
+select * from emp_join_bkp;
+
+delete from emp_join where emp_id=10002;
+
+-------------------------------------------------------------------------
+create table customer as select * from s_customer_scd;
+
+select * from customer;
+
+create table customer_bkp_trig as select * from s_customer_scd where 1=2;
+
+alter table customer_bkp_trig add date_of_deletion date;
+
+alter table customer_bkp_trig add who_deleted varchar2(30);
+
+select * from customer_bkp_trig;
+--------------------------------------------------------------------------
+ 
+
+-----------------------------------------------------------------------------------
+Instead of triggers:
+======================
+
+select * from employees;
+
+
+desc employees;
+
+select * from departments;
+
+create or replace view emp_v
+as select EMPLOYEE_ID, FIRST_nAME, lAST_NAME, EMAIl, HIRE_DATE,
+JOB_ID from employees where department_id=30;
+
+select * from emp_v;
+
+insert into emp_v values(300,'Arun','Kumar','Arun@gmail.com',sysdate,'PU_CLERK');
+
+create or replace view emp_dept_v
+as select e.EMPLOYEE_ID, e.FIRST_NAME, e.LAST_NAME, e.EMAIL,e.HIRE_DATE,e.JOBID,e.SALARY,e.DEPARTMENT_ID,
+d.DEPARTMENT_NAME from employees e, department d
+where e.department_id=d.department_id;
+
+select * from emp_dept_v;
+
+insert into emp_dept_v values (300,'Arun','Kumar','Arun@gmail.com',sysdate,50000,20,'Purchasing');
+
+create or replace trigger tr_emp_dept_vw_instead
+instead of insert on emp_dept_v
+declare
+check_exist_number;
+begin
+select count(*) into check_exist from departments where department_id=:new.department_id;
+
+if check_exist=0 then
+insert into departments(department_id,department_name)
+values(:new.department_id,:new.department_name);
+end if;
+
+select count(*) into check_exist from employees where employee_id=:new_employee_id;
+
+if check_exist=0 then
+insert into employees(EMPLOYEE_ID,FIRST_NAME,LAST_NAME,EMAIl,HIRE_DATE,JOB_ID,SALARY,DEPARTMENT_ID)
+values(:new.EMPLOYEE_ID,"NEW.FIRST_NAME,:new.LAST_NAME,:new.EMAIl,:new.HIRE_DATE,:new.JOB_ID,:new.SALARY,:new.DEPARTMENT_ID);
+end if;
+end;
+
+--------------------------------------------------------------------------------
+
+The Oracle mutating trigger error occurs when a trigger refrences the table that owns the trigger, resulting in the "ORA-04091: table name is mutating, trigger/function may not see it."message.
+
+A mutating table is a table that is currently being modified by an update, delete or insert statement. You will encountere the ORA-04091 error if you have a row trigger that reads or modifies the mutating table. For Example, if your trigger contains a select statement or an update statement referencing the table it is triggering off of you will recieve the error. 
+
+create table customer1
+(
+cust_id number,
+cust_name varchar2(100)
+);
+
+create table customer2
+(
+cust_id number,
+cust_name varchar2(100)
+);
+
+insert into customer1 values (200,'NIC IT Academy');
+
+commit;
+
+create or replace trigger mutate_trigger
+after insert on customer2
+for each row
+begin
+update customer1 set cust_id =(select max(cust_id) from customer2);
+end;
+
+insert into customer2 values (100,'NIC');
+
+-----------------------------------------------------------------------------
+
+----- How to fix mutating error------------------
+
+-- Trigger will get fired, trying to update data in customer1
+-- 2nd transcation is depends on customer2 table
+-- but customer2 itself is not committed
+-- 2nd table is not yet committed, 1st table transcation depends on 2nd table
+-- we have to make these two transcation independently using autonomous transcations
+
+create or replace trigger mutate_trigger
+after insert on customer2
+for each row
+declare
+PRAGMA AUTONOMOUS_TRANSCATION;
+begin
+update customer1 set cust_id =(select max(cust_id) from customer2);
+end;
+
+select * from customer1;
+insert into customer2 values (100,'NIC');
+
+------------------------------------------------------------------------------
+--------------Oracle datatypes:--------
+Scalar datatypes:-
+==========================
+
+declare 
+v_first_name employees.first_name%type;
+v_salary employees.salary%type;
+begin
+select first_name, salary into v_first_name,v_salary
+from employees where employee_id=120;
+dbms_output.put_line('the first name is: '||v_first_name);
+dbms_output.put_line('The salary is: '||v_salary);
+end;
+
+PL/SQL lets you define two kinds of composite data types: collection and record.
+
+A composite data type stores values that have internal components. you can pass entire composite variables to subprograms as parameters, and you can access internal components of composite variables individually.
+Internal components can be either scalar or composite. You can use scalar components wherever you acn sue scalar variables. you can use composite components wherever you can use composite variables of the same type.
+
+In a collection, the internal components always have the same data type, and are called elements. you can access each element of a collection variable by its unique index, with this synatx: variable_name(index). To create a colletion variable, you either define a collection type and then create a variable of that type or use %TYPE.
+
+In a record, the inetrnal components can have different data types, and are called fields. you can access each field of a record variable by its name, with this syntax: variable_name.field_name. To create a record variable,you either define a RECORD type and then create a variable of that type or use %ROWTYPE or %TYPE.
+
+-----------------------------
+Record Type:
+=============
+
+What is Record Type?
+
+A record type is a complex data type which allows the programmer to create a new data type with the desired column structure.
+
+It is similar structures in C
+
+It groups one or more column to form a new data type
+These columns will have its own name and data type
+A record type can accept the data
+
+Record type simply means a new data type. once the record type is created, it will be stored as a new data type
+in the database and the same shall be used to declare a variable in programs.
+It will use the keyword 'TYPE' to instruct the compiler that it is creating the new data type.
+It can be created at 'database level' which can be stored as database objects, used all-over the databse or it
+can be created at the 'subprogram level', which is visible only insisde the subprograms.
+
+The database level record type can also be declared for the table columns so that single column can hold the complex data.
+
+the data in these data type can be acceseed by referring to their variable_name followed by period operator(.) 
+followed by column_name i.e. '<record_type_variable_name>.<column_name>'
+
+you can not create a record type at schema level, to define a record type specify its name and define its field.
+
+---Syntax:---------
+
+CREATE TYPE <type_name_db> IS RECORD
+(
+<column 1> <datatype>,
+);
+
+
+----Syntax for declaration at subprogram level:-
+===============================================
+
+DEClARE
+TYPE <type_name> Is RECORD
+(
+<column1> <datatype>,
+);
+BEGIN
+<execution_section>;
+END;
+
+-----------------------------------------------------
+
+%ROWTYPE:
+============
+
+declare
+v_emp_rec employees%rowtype;
+begin
+select * into v_emp_rec from employees where employee_id=120;
+dbms_output.put_line('the first name is: '||v_emp_rec.first_name);
+dbms_output.put_line('The phone_number is: '||v_emp_rec.phone_number);
+end;
+----------------------------------------------------------------
+
+Record: TYPE
+
+declare 
+type emp1_record_type is record(first_name varchar2(30), salary number(8)); ----definition
+emp_rec emp1_record_type; --declare
+begin
+emp_rec.first_name:='John';
+emp_rec.salary:='20000';
+dbms_output.put_line(emp_rec.first_name ||' , '||emp_rec.salary);
+end;
+
+***************************************************************************
+Record : TYPE with constructor:
+
+decalre
+type emp_rec_type is record (first_name varchar2(30), salary number); ---definition
+emp_rec emp_rec_type := emp_rec_type('John',2000);  ---declare
+begin
+dbms_output.put_line('emp_rec.first_name:='||emp_rec.first_name);
+end;
+
+*******************************************************************************
+Collections:-
+==============
+
+Collections are used in some of the most important performance optimization features of PL/SQL such as
+BULK COLLECT. SELECT statements that retrieve multiple rows with a single fetch, increasing the speed of data retrievel.
+
+FORALL. Inserts,updates, and deletes that use collections to change multiple rows of data very quickly.
+Table functions. PL/SQL functions that return collections and can be called in the FROM clause of a SELECT statement.
+
+A Collection is an ordered group of logically related elements.
+
+Main purpose of using collections is to improve performance.
+
+Using collection we can load all records onece from database into local memory and then we can perform operation
+on it and save it back to database. It reduces calls to databse.
+
+oracle provided 3 types of collection:-
+===========================================
+
+VARRAY - variable array
+Nested Table
+Associative Array or index by table
+
+-------------------------------------------------------
+
+Collections are used along with 
+===================================
+Bulk collect
+Forall
+Table functions to improve performance.
+---------------------------------------------------------------------
+Collection:- In a collection , the internal components always have the same data types are called the elements.
+Record:- In a record, the internal components can have different data type are called field.
+
+You can also use collections to work with lists of data in your program that are not stored in databse tables.
+
+lets start by defining a common collections vocabulary
+
+Index value:- the location of the data in a collection.Index values are usually integers but one type of collection can also be strings.
+Element:- The data stored at a specific index value in a collection. Elements in a colletion are always of the same type (all of them are strings, dates, or records). PL/SQL collections are homogeneous.
+Sparse:- A collection is sparse if there is at least one index value between the lowest and highest defined index values that is jot defined. For exmaple: a sparse collection has an element assigned to index value 1 and another t index value 10 but nothing in between. The opposite of a sparse collection is a dense core.
+Method:- A collection method is a procedure or function that either provides information about the collection or changes the contents of the collection. Methods are attached to the collections variabke with dot notation(object-oriented syntax) as in my_collection.FIRST.
+
+-----Three types of collections--------------------
+Collections have been enhanced in several ways through the years and across Orcale Databse versions. There are now three types of collections to choose from, each with its own set of characterstics and each best suited to a difefremt circumstances:
+
+Associative array :- The frist type of collection in PL/SQL this was originally called a "PL/SQL table"
+and it can be used only in PL/SQL blocks. Associative arrays can be sparse or dnse and can be indexed by integer or string.
+
+Nested Table:- The nested table can be used in PL/SQL blocks, in sql statements and as the data type of columns in tables. Nested tables can be sparse but are almost always dense.
+They can be indexed only by integer.You ca use the MULTISET operator to perform set operational and to perform equality comparisons on nested tables varray. the varray (variable-size array) can be sued in PL/SQL blocks, in sql 
+And as the data type of columns in tables. Varrays are always dense and indexed by 'integer.when a varray type is defined,you must specify the maximum number of elemets alllwoed in a collection declared with that type.
+the associatve array is the most commonly used collections type, but nested tables have some powerful, unique fetures
+(such as MULTISET operators) that can simplify the code needed to use your collection.
+
+1.Varrays: variable size array
+
+  arrays
+  predefined size
+  index starts with
+  cannot delete elements.
+  
+2.Nested Tables: 
+   
+   --list
+   --variable size
+   --index starts with 1
+   --can delete the elements with in the array
+   --will not define maximum limit
+   
+3.Associative arrays - Index by tables:
+
+    --- Indexing can be done with strings
+    --- Map
+    --- Key:value
+    
+steps in Collections:
+
+1.Define
+2.Declare
+3.Intialize
+4.Assign
+5.Access
+
+---------------------------------------------------------------------------
+VARRAY:
+========
+
+declare
+type v_array_type is varray(7) of varchar2(30);
+address v_array_type:=v_array_type(null,null,null,null,null,null,null);
+begin
+address(1):='G2';
+address(2):='ABC flat';
+address(3):='kalyan';
+address(4):='Mumbai new';
+address(5):='Mumbai';
+address(6):='India';
+address(7):='546354';
+dbms_output.put_line('The story f customer is: '||address(4));
+end;
+
+---------------------------------------------------------------
+collection methods:
+
+limit - maximum number of value of varray
+
+count - how many elements stored in the varray(actually initialized)
+
+first - first index value (immutable) -could not delete any element
+
+last - last elements wwill be deleted
+
+delete - delete all the elements in varray, can not delete specific element
+
+extend - extend the number of elements
+
+prior(n) - index of prior element
+
+next(n) - index of next element
+
+-----------------------------------------------------------------------------------
+Nested tables:
+
+Declare
+ Type v_nested_table_type is table of varchar2(40);
+ 
+ v_color v_nested_table_type:=v_nested_table_type(null,null,null,null,null,null,null,null,null);
+ 
+ begin
+ v_color(1) := 'Red';
+ v_color(2) := 'Black';
+ v_color(3) := 'Blue';
+ v_color(4) := 'Green';
+ v_color(5) := 'Yellow';
+ v_color(6) := 'Gray';
+ v_color(7) := 'White';
+ v_color(8) := 'Orange';
+ dbms_output.put_line('v_color(4) '||v_color(4));
+ end;
+ 
+-------------------------------------------------------------
+Nested table will not have limit:
+
+
+ 
+
+
+
+
+
+
+ 
+ 
+
+
+
+
+
