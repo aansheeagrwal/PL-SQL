@@ -1,5 +1,7 @@
 # 🐘 PL/SQL Playground  
 
+![GitHub repo size](https://img.shields.io/github/repo-size/aansheeagrwal/PLSQL-Problems?color=blueviolet) ![GitHub contributors](https://img.shields.io/github/contributors/aansheeagrwal/PLSQL-Problems) ![GitHub last commit](https://img.shields.io/github/last-commit/aansheeagrwal/PLSQL-Problems?color=success) ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+
 Welcome to my **PL/SQL Learning & Experiments Repository** 🎉  
 This repo is my personal space to practice, explore, and share different **PL/SQL concepts** with simple, practical examples.  
 
